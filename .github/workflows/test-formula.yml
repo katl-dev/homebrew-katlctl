@@ -22,6 +22,7 @@ jobs:
           brew install katl-dev/katlctl/beta
           katlctl version
           brew test katl-dev/katlctl/beta
+          bash scripts/check-completions.sh katl-dev/katlctl/beta
       - name: Install and test exact beta release
         run: |
           version="$(sed -n 's/^  version "\(.*\)"/\1/p' Formula/beta.rb)"
@@ -29,6 +30,7 @@ jobs:
           brew install "katl-dev/katlctl/beta@$version"
           katlctl version
           brew test "katl-dev/katlctl/beta@$version"
+          bash scripts/check-completions.sh "katl-dev/katlctl/beta@$version"
       - name: Install and test stable channel
         if: hashFiles('Formula/stable.rb') != ''
         run: |
@@ -37,3 +39,4 @@ jobs:
           brew install katl-dev/katlctl/stable
           katlctl version
           brew test katl-dev/katlctl/stable
+          bash scripts/check-completions.sh katl-dev/katlctl/stable

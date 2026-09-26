@@ -49,11 +49,13 @@ jobs:
           brew install "$tap/beta"
           katlctl version
           brew test "$tap/beta"
+          bash scripts/check-completions.sh "$tap/beta"
           brew uninstall "$tap/beta"
           if [[ -f Formula/stable.rb ]]; then
             brew install "$tap/stable"
             katlctl version
             brew test "$tap/stable"
+            bash scripts/check-completions.sh "$tap/stable"
             brew uninstall "$tap/stable"
           fi
           while IFS= read -r formula; do
@@ -62,6 +64,7 @@ jobs:
             brew install "$tap/$name"
             katlctl version
             brew test "$tap/$name"
+            bash scripts/check-completions.sh "$tap/$name"
             brew uninstall "$tap/$name"
           done < <(git diff --cached --name-only -- Formula/)
           git diff --quiet -- Formula/

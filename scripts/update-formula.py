@@ -136,6 +136,7 @@ def render(formula, version, digests):
     lines += [
         '  def install',
         '    bin.install Dir["katlctl-*"].fetch(0) => "katlctl"',
+        '    generate_completions_from_executable(bin/"katlctl", "completion")',
         '  end',
         '',
         '  test do',

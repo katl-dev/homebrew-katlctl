@@ -14,6 +14,9 @@ has the higher version. Both formulas install the executable as `katlctl`.
 The formulas conflict; switch channels by uninstalling the current formula
 (`brew uninstall katl-dev/katlctl/beta` or `brew uninstall katl-dev/katlctl/stable`)
 before installing the other.
+Each formula installs Bash, Fish, and Zsh completion scripts for `katlctl`.
+Your shell may need to load Homebrew's completion directory; see
+[Homebrew's shell completion instructions](https://docs.brew.sh/Shell-Completion).
 
 To keep an exact release, install its versioned formula:
 
