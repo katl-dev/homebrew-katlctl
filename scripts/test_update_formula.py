@@ -52,6 +52,7 @@ class ChannelSelectionTest(unittest.TestCase):
 
                 self.assertIn(f"class {class_name} < Formula", formula)
                 self.assertIn('bin.install Dir["katlctl-*"].fetch(0) => "katlctl"', formula)
+                self.assertIn('chmod 0755, bin/"katlctl"', formula)
                 self.assertIn('generate_completions_from_executable(bin/"katlctl", "completion")', formula)
                 other = "beta" if name == "stable" else "stable"
                 self.assertIn(f'conflicts_with "katl-dev/katlctl/{other}"', formula)
@@ -63,6 +64,7 @@ class ChannelSelectionTest(unittest.TestCase):
         self.assertIn("class BetaAT202690Beta16 < Formula", formula)
         self.assertIn('version "2026.9.0-beta.16"', formula)
         self.assertIn('bin.install Dir["katlctl-*"].fetch(0) => "katlctl"', formula)
+        self.assertIn('chmod 0755, bin/"katlctl"', formula)
         self.assertIn('generate_completions_from_executable(bin/"katlctl", "completion")', formula)
 
     def test_pins_respect_channel_and_starting_release(self):
