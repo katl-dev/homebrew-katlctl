@@ -42,23 +42,26 @@ jobs:
       - name: Install and test changed formulas
         if: steps.changes.outputs.changed == 'true'
         run: |
-          brew install --formula ./Formula/beta.rb
+          # setup-homebrew mounts this checkout as the tap, including uncommitted formulas.
+          tap=katl-dev/katlctl
+          brew install "$tap/beta"
           katlctl version
-          brew test ./Formula/beta.rb
-          brew uninstall beta
+          brew test "$tap/beta"
+          brew uninstall "$tap/beta"
           if [[ -f Formula/stable.rb ]]; then
-            brew install --formula ./Formula/stable.rb
+            brew install "$tap/stable"
             katlctl version
-            brew test ./Formula/stable.rb
-            brew uninstall stable
+            brew test "$tap/stable"
+            brew uninstall "$tap/stable"
           fi
           while IFS= read -r formula; do
             [[ "$formula" == *@*.rb ]] || continue
-            brew install --formula "./$formula"
+            name="$(basename "$formula" .rb)"
+            brew install "$tap/$name"
             katlctl version
-            brew test "./$formula"
-            brew uninstall "$(basename "$formula" .rb)"
-          done < <(git ls-files --others --exclude-standard -- Formula/)
+            brew test "$tap/$name"
+            brew uninstall "$tap/$name"
+          done < <({ git diff --name-only -- Formula/; git ls-files --others --exclude-standard -- Formula/; } | sort -u)
       - name: Publish verified formulas
         run: |
           git add -A Formula/
