@@ -67,6 +67,8 @@ jobs:
           git diff --quiet -- Formula/
           ! git diff --cached --quiet -- Formula/
       - name: Publish verified formulas
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if git diff --cached --quiet; then
             echo "Formulas are already current"
@@ -79,4 +81,6 @@ jobs:
 
           Publish verified binaries from the latest eligible Katl releases.
           MESSAGE
+          # Homebrew's tap setup changes the checkout path used by checkout's credentials.
+          gh auth setup-git
           git push origin HEAD:main
