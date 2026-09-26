@@ -19,6 +19,10 @@ jobs:
       - uses: actions/checkout@v7
       - name: Check channel selection
         run: python3 -m unittest discover -s scripts -p 'test_*.py'
+      - uses: Homebrew/actions/setup-homebrew@1e34f2e2acaa766b7efacb8c26352e6abbb023f9 # 2026.09.13.1
+        with:
+          core: false
+          cask: false
       - name: Update from published releases
         env:
           GH_TOKEN: ${{ github.token }}
@@ -28,21 +32,19 @@ jobs:
           for formula in Formula/*.rb; do
             ruby -c "$formula"
           done
-      - name: Check for formula changes
+      - name: Stage formula changes
         id: changes
         run: |
-          if [[ -n "$(git status --porcelain -- Formula/)" ]]; then
+          git add -A Formula/
+          if ! git diff --cached --quiet -- Formula/; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: Homebrew/actions/setup-homebrew@1e34f2e2acaa766b7efacb8c26352e6abbb023f9 # 2026.09.13.1
-        if: steps.changes.outputs.changed == 'true'
-        with:
-          core: false
-          cask: false
       - name: Install and test changed formulas
         if: steps.changes.outputs.changed == 'true'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
         run: |
-          # setup-homebrew mounts this checkout as the tap, including uncommitted formulas.
+          # Homebrew uses this checkout as its tap; test the staged bytes before committing them.
           tap=katl-dev/katlctl
           brew install "$tap/beta"
           katlctl version
@@ -61,10 +63,11 @@ jobs:
             katlctl version
             brew test "$tap/$name"
             brew uninstall "$tap/$name"
-          done < <({ git diff --name-only -- Formula/; git ls-files --others --exclude-standard -- Formula/; } | sort -u)
+          done < <(git diff --cached --name-only -- Formula/)
+          git diff --quiet -- Formula/
+          ! git diff --cached --quiet -- Formula/
       - name: Publish verified formulas
         run: |
-          git add -A Formula/
           if git diff --cached --quiet; then
             echo "Formulas are already current"
             exit 0
