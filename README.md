@@ -15,6 +15,18 @@ The formulas conflict; switch channels by uninstalling the current formula
 (`brew uninstall katl-dev/katlctl/beta` or `brew uninstall katl-dev/katlctl/stable`)
 before installing the other.
 
+To keep an exact release, install its versioned formula:
+
+```sh
+brew install katl-dev/katlctl/beta@2026.9.0-beta.16
+katlctl version
+```
+
+The tap retains exact-version formulas from `2026.9.0-beta.16` onward. A stable
+release gets both `stable@<version>` and `beta@<version>` because it is eligible
+for either channel; a beta release gets only `beta@<version>`. Uninstall a
+channel formula before installing another one because each provides `katlctl`.
+
 The current published Katl releases provide a Linux amd64 binary. The tap will
 also publish macOS arm64 entries when that release asset becomes available.
 Other architectures are not supported by the upstream release.
@@ -22,7 +34,8 @@ Other architectures are not supported by the upstream release.
 The [formulas](Formula/) pin release binaries by SHA-256. An [hourly GitHub
 Actions workflow](.github/workflows/update-formula.yml) checks both channels,
 verifies each binary against its upstream checksum, and commits changed formulas
-to the tap. It installs and tests changed formulas before publishing. A
+to the tap. It installs and tests changed formulas before publishing. Published
+exact-version formulas remain fixed as the rolling channels advance. A
 [push check](.github/workflows/test-formula.yml) also installs the published
 formulas through Homebrew. Run the update workflow manually to check for a
 release immediately.

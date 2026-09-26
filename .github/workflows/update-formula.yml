@@ -45,12 +45,20 @@ jobs:
           brew install --formula ./Formula/beta.rb
           katlctl version
           brew test ./Formula/beta.rb
+          brew uninstall beta
           if [[ -f Formula/stable.rb ]]; then
-            brew uninstall beta
             brew install --formula ./Formula/stable.rb
             katlctl version
             brew test ./Formula/stable.rb
+            brew uninstall stable
           fi
+          while IFS= read -r formula; do
+            [[ "$formula" == *@*.rb ]] || continue
+            brew install --formula "./$formula"
+            katlctl version
+            brew test "./$formula"
+            brew uninstall "$(basename "$formula" .rb)"
+          done < <(git ls-files --others --exclude-standard -- Formula/)
       - name: Publish verified formulas
         run: |
           git add -A Formula/

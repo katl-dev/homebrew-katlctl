@@ -22,10 +22,18 @@ jobs:
           brew install katl-dev/katlctl/beta
           katlctl version
           brew test katl-dev/katlctl/beta
+      - name: Install and test exact beta release
+        run: |
+          version="$(sed -n 's/^  version "\(.*\)"/\1/p' Formula/beta.rb)"
+          brew uninstall katl-dev/katlctl/beta
+          brew install "katl-dev/katlctl/beta@$version"
+          katlctl version
+          brew test "katl-dev/katlctl/beta@$version"
       - name: Install and test stable channel
         if: hashFiles('Formula/stable.rb') != ''
         run: |
-          brew uninstall katl-dev/katlctl/beta
+          version="$(sed -n 's/^  version "\(.*\)"/\1/p' Formula/beta.rb)"
+          brew uninstall "katl-dev/katlctl/beta@$version"
           brew install katl-dev/katlctl/stable
           katlctl version
           brew test katl-dev/katlctl/stable

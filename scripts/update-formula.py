@@ -14,20 +14,21 @@ TAP = "katl-dev/katlctl"
 FORMULAS = Path(__file__).resolve().parents[1] / "Formula"
 PLATFORMS = ("linux-amd64", "darwin-arm64")
 VERSION = re.compile(r"v([0-9]{4})\.([0-9]+)\.([0-9]+)(?:-beta\.([0-9]+))?")
+# Keep exact-version formulas from the first release pinned by this tap onward.
+PIN_FROM = (2026, 9, 0, 0, 16)
 
 
 def gh(*args):
     return subprocess.check_output(("gh", *args), text=True).strip()
 
 
-def release_channels():
+def published_releases():
     pages = json.loads(gh("api", f"repos/{REPOSITORY}/releases?per_page=100",
                           "--paginate", "--slurp"))
-    return select_channels(release for page in pages for release in page)
+    return [release for page in pages for release in page]
 
 
-def select_channels(releases):
-    eligible = []
+def eligible_releases(releases):
     for published in releases:
         match = VERSION.fullmatch(published["tag_name"])
         if published["draft"] or not match:
@@ -38,7 +39,11 @@ def select_channels(releases):
             0 if match.group(4) is not None else 1,
             int(match.group(4)) if match.group(4) is not None else 0,
         )
-        eligible.append((key, published))
+        yield key, published
+
+
+def select_channels(releases):
+    eligible = list(eligible_releases(releases))
 
     if not eligible:
         raise ValueError("no published stable or beta Katl release found")
@@ -46,6 +51,16 @@ def select_channels(releases):
     stable = max((item for item in eligible if not item[1]["prerelease"]),
                  key=lambda item: item[0], default=None)
     return stable[1] if stable else None, beta
+
+
+def pinned_formulas(releases):
+    for key, published in eligible_releases(releases):
+        if key < PIN_FROM:
+            continue
+        version = published["tag_name"][1:]
+        channels = ("beta",) if published["prerelease"] else ("stable", "beta")
+        for channel in channels:
+            yield f"{channel}@{version}", published
 
 
 def checksums(published):
@@ -83,14 +98,20 @@ def checksums(published):
 
 def render(formula, version, digests):
     class_name = formula.capitalize()
-    other = "beta" if formula == "stable" else "stable"
+    class_name = re.sub(r"[-_.]([A-Za-z0-9])", lambda match: match[1].upper(), class_name)
+    class_name = re.sub(r"([A-Za-z])@([0-9])", r"\1AT\2", class_name)
+    channel = formula.split("@", 1)[0]
+    conflicts = ("stable", "beta") if "@" in formula else (
+        "beta" if channel == "stable" else "stable",
+    )
     lines = [
         f'class {class_name} < Formula',
         '  desc "Workstation CLI for KatlOS"',
         '  homepage "https://github.com/katl-dev/katl"',
         f'  version "{version}"',
         '  license "MIT"',
-        f'  conflicts_with "{TAP}/{other}", because: "both install katlctl"',
+        '  conflicts_with ' + ', '.join(f'"{TAP}/{other}"' for other in conflicts) +
+        ', because: "both install katlctl"',
         '',
     ]
     if "darwin-arm64" not in digests:
@@ -127,17 +148,34 @@ def render(formula, version, digests):
 
 
 def main():
-    stable, beta = release_channels()
+    releases = published_releases()
+    stable, beta = select_channels(releases)
     FORMULAS.mkdir(exist_ok=True)
+    verified = {}
+
+    def verify(published):
+        tag = published["tag_name"]
+        if tag not in verified:
+            verified[tag] = checksums(published)
+        return verified[tag]
+
     for formula, published in (("stable", stable), ("beta", beta)):
         if published is None:
             if (FORMULAS / f"{formula}.rb").exists():
                 raise ValueError("stable formula exists but no stable release was found")
             print("No stable release yet; stable formula remains unpublished")
             continue
-        version, digests = checksums(published)
+        version, digests = verify(published)
         (FORMULAS / f"{formula}.rb").write_text(render(formula, version, digests))
         print(f"Updated {formula} formula to {version} ({', '.join(digests)})")
+
+    for formula, published in pinned_formulas(releases):
+        path = FORMULAS / f"{formula}.rb"
+        if path.exists() and published not in (stable, beta):
+            continue
+        version, digests = verify(published)
+        path.write_text(render(formula, version, digests))
+        print(f"Updated {formula} formula ({', '.join(digests)})")
 
 
 if __name__ == "__main__":

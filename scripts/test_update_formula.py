@@ -55,6 +55,30 @@ class ChannelSelectionTest(unittest.TestCase):
                 other = "beta" if name == "stable" else "stable"
                 self.assertIn(f'conflicts_with "katl-dev/katlctl/{other}"', formula)
 
+    def test_exact_beta_release(self):
+        formula = updater.render("beta@2026.9.0-beta.16", "2026.9.0-beta.16",
+                                 {"linux-amd64": "a" * 64})
+
+        self.assertIn("class BetaAT202690Beta16 < Formula", formula)
+        self.assertIn('version "2026.9.0-beta.16"', formula)
+        self.assertIn('bin.install Dir["katlctl-*"].fetch(0) => "katlctl"', formula)
+
+    def test_pins_respect_channel_and_starting_release(self):
+        names = [name for name, _ in updater.pinned_formulas([
+            release("v2026.9.0-beta.15", True),
+            release("v2026.9.0-beta.16", True),
+            release("v2026.9.0-beta.17", True),
+            release("v2026.9.0", False),
+            release("v2026.10.0-rc.1", True),
+        ])]
+
+        self.assertEqual(names, [
+            "beta@2026.9.0-beta.16",
+            "beta@2026.9.0-beta.17",
+            "stable@2026.9.0",
+            "beta@2026.9.0",
+        ])
+
 
 if __name__ == "__main__":
     unittest.main()
