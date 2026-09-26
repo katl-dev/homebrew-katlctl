@@ -1,0 +1,31 @@
+name: Test katlctl formulas
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: Homebrew/actions/setup-homebrew@1e34f2e2acaa766b7efacb8c26352e6abbb023f9 # 2026.09.13.1
+        with:
+          core: false
+          cask: false
+      - name: Install and test beta channel
+        run: |
+          brew install katl-dev/katlctl/beta
+          katlctl version
+          brew test katl-dev/katlctl/beta
+      - name: Install and test stable channel
+        if: hashFiles('Formula/stable.rb') != ''
+        run: |
+          brew uninstall katl-dev/katlctl/beta
+          brew install katl-dev/katlctl/stable
+          katlctl version
+          brew test katl-dev/katlctl/stable

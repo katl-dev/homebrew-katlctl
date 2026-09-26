@@ -1,0 +1,68 @@
+name: Update katlctl formulas
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-katlctl-formulas
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check channel selection
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
+      - name: Update from published releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/update-formula.py
+      - name: Check formula syntax
+        run: |
+          for formula in Formula/*.rb; do
+            ruby -c "$formula"
+          done
+      - name: Check for formula changes
+        id: changes
+        run: |
+          if [[ -n "$(git status --porcelain -- Formula/)" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: Homebrew/actions/setup-homebrew@1e34f2e2acaa766b7efacb8c26352e6abbb023f9 # 2026.09.13.1
+        if: steps.changes.outputs.changed == 'true'
+        with:
+          core: false
+          cask: false
+      - name: Install and test changed formulas
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          brew install --formula ./Formula/beta.rb
+          katlctl version
+          brew test ./Formula/beta.rb
+          if [[ -f Formula/stable.rb ]]; then
+            brew uninstall beta
+            brew install --formula ./Formula/stable.rb
+            katlctl version
+            brew test ./Formula/stable.rb
+          fi
+      - name: Publish verified formulas
+        run: |
+          git add -A Formula/
+          if git diff --cached --quiet; then
+            echo "Formulas are already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cat <<'MESSAGE' | bash scripts/format-commit-message | git commit -F -
+          katlctl: update stable and beta Homebrew formulas
+
+          Publish verified binaries from the latest eligible Katl releases.
+          MESSAGE
+          git push origin HEAD:main
