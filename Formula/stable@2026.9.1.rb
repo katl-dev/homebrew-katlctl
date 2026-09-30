@@ -1,9 +1,9 @@
-class Beta < Formula
+class StableAT202691 < Formula
   desc "Workstation CLI for KatlOS"
   homepage "https://github.com/katl-dev/katl"
   version "2026.9.1"
   license "MIT"
-  conflicts_with "katl-dev/katlctl/stable", because: "both install katlctl"
+  conflicts_with "katl-dev/katlctl/stable", "katl-dev/katlctl/beta", because: "both install katlctl"
 
   on_linux do
     depends_on arch: :x86_64
