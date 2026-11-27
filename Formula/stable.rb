@@ -1,20 +1,20 @@
 class Stable < Formula
   desc "Workstation CLI for KatlOS"
   homepage "https://github.com/katl-dev/katl"
-  version "2026.11.5"
+  version "2026.11.6"
   license "MIT"
   conflicts_with "katl-dev/katlctl/beta", because: "both install katlctl"
 
   on_linux do
     depends_on arch: :x86_64
-    url "https://github.com/katl-dev/katl/releases/download/v2026.11.5/katlctl-2026.11.5-linux-amd64"
-    sha256 "ede297a5495ed5c4d3d039427cd666713eebcc6910c526deab7bcb6c143b9e09"
+    url "https://github.com/katl-dev/katl/releases/download/v2026.11.6/katlctl-2026.11.6-linux-amd64"
+    sha256 "f266fc418a4bc058130c63f61f1bc208ec58e106d78a2b3d27cdfd758f85ff07"
   end
 
   on_macos do
     depends_on arch: :arm64
-    url "https://github.com/katl-dev/katl/releases/download/v2026.11.5/katlctl-2026.11.5-darwin-arm64"
-    sha256 "3281363dc4b0a54c69a3a1e094bb8a309afc0d805caa38ee64c5d160ec238ceb"
+    url "https://github.com/katl-dev/katl/releases/download/v2026.11.6/katlctl-2026.11.6-darwin-arm64"
+    sha256 "af0cc835c536549b73d4c0df49d92aede821e1ff06149e6aaa57d13c1b6ab25d"
   end
 
   def install
